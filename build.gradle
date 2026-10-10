@@ -21,10 +21,55 @@ dependencies {
     testImplementation 'io.rest-assured:rest-assured-all:6.0.1'
     implementation 'org.json:json:20260814'
 
+    // cucumber
+    implementation 'io.cucumber:cucumber-java:8.0.4'
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine:8.0.4'
 
-
+    testImplementation platform('com.fasterxml.jackson:jackson-bom:2.22.0')
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    testImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8'
 }
 
 test {
     useJUnitPlatform()
+}
+
+configurations {
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
+}
+
+/*task cucumberCli() {
+    dependsOn assemble, testClasses
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = [
+                    '--plugin', 'pretty',
+                    '--plugin', 'html:target/cucumber-report.html',
+                    '--glue', 'runner',
+                    'src/test/resources',
+                    '--tags'] + [suite]
+        }*/
+// gradle cucumberCli -Psuite="@Regression"
+tasks.register('cucumberCli', JavaExec) {
+    group = 'verification'
+    description = 'Ejecuta los escenarios Cucumber por tags'
+
+    dependsOn tasks.named('testClasses')
+
+    mainClass.set('io.cucumber.core.cli.Main')
+    classpath = sourceSets.test.runtimeClasspath
+
+    def suite = providers.gradleProperty('suite').getOrElse('@Regression')
+
+    args(
+            '--plugin', 'pretty',
+            '--plugin', 'html:report/cucumber-report.html',
+            '--glue', 'runner',
+            '--tags', suite,
+            'src/test/resources'
+    )
 }
